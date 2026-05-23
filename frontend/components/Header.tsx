@@ -102,7 +102,7 @@ const Header = () => {
         </div>
       </div>
 
-      <div className="flex mt-4.5 mx-4 py-1.5 rounded-2xl shadow-sm h-14 px-3 md:hidden bg-white border-b border-gray-100 items-center justify-between sticky top-0 z-40">
+      <div className="flex mt-4.5 mx-4 py-1.5 rounded-2xl shadow-md h-14 px-3 md:hidden bg-white border-b border-gray-100 items-center justify-between sticky top-2 z-40">
         {/* Left: VedaAI Logo */}
         <div className="flex items-center h-10">
           <Image
