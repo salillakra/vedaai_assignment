@@ -34,7 +34,7 @@ const MobileFab = () => {
   return (
     <button
       onClick={handleCreateMobileAssignment}
-      className="fixed bottom-24 right-6 z-40 md:hidden h-14 w-14 rounded-full bg-white shadow-[0px_8px_24px_rgba(0,0,0,0.15)] border border-gray-100 flex items-center justify-center text-[#FF5623] cursor-pointer hover:scale-110 active:scale-90 transition-all duration-200"
+      className="fixed bottom-26 right-4 z-40 md:hidden h-14 w-14 rounded-full bg-white shadow-[0px_8px_24px_rgba(0,0,0,0.15)] border border-gray-100 flex items-center justify-center text-[#FF5623] cursor-pointer hover:scale-110 active:scale-90 transition-all duration-200"
       aria-label="Create Assignment"
     >
       <svg

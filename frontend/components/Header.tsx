@@ -5,6 +5,7 @@ import DropdownIcon from "@/assets/Icons/drop-down.svg";
 import VedaaiLogo from "@/assets/images/VedaaiLogo.svg";
 import Image from "next/image";
 import { useUiStore } from "@/store/uiStore";
+import VedaaiMobileLogo from "@/assets/images/VedaaiMobileLogo.svg";
 
 //Menu Icon
 const MenuIcon = () => {
@@ -101,15 +102,15 @@ const Header = () => {
         </div>
       </div>
 
-      <div className="flex md:hidden w-full h-16 bg-white border-b border-gray-100 items-center justify-between px-4 sticky top-0 z-40 shadow-xs">
+      <div className="flex mt-4.5 mx-4 py-1.5 rounded-2xl shadow-sm h-14 px-3 md:hidden bg-white border-b border-gray-100 items-center justify-between sticky top-0 z-40">
         {/* Left: VedaAI Logo */}
         <div className="flex items-center h-10">
           <Image
-            src={VedaaiLogo}
+            src={VedaaiMobileLogo}
             alt="VedaAI Logo"
-            width={100}
-            height={32}
-            className="h-12 w-auto translate-y-1.75"
+            width={50}
+            height={50}
+            className="h-7 w-auto"
             priority
           />
         </div>

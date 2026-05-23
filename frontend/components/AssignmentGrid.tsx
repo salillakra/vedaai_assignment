@@ -198,7 +198,7 @@ const AssignmentGrid = () => {
       {/* Header Breadcrumb / Meta Block */}
       <div className="flex flex-col gap-1 mt-2 md:mt-4">
         <div className="flex items-center gap-2">
-          <span className="relative flex h-3 w-3 shrink-0 items-center justify-center">
+          <span className="relative hidden md:flex h-3 w-3 shrink-0 items-center justify-center">
             <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-40"></span>
             <span className="absolute -inset-0.5 rounded-full border border-emerald-300 opacity-30"></span>
             <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
@@ -214,11 +214,11 @@ const AssignmentGrid = () => {
       </div>
 
       {/* Action Filters and Search Row */}
-      <div className="flex items-center justify-between mt-6 bg-white px-4 py-2 rounded-2xl gap-3 flex-wrap">
+      <div className="flex items-center justify-between mt-6 bg-white px-4 py-2 rounded-2xl gap-3">
         {/* Filter Button */}
-        <button className="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-gray-50 active:scale-95 transition-all text-xs  text-[#A9A9A9] cursor-pointer">
+        <button className="flex items-center gap-1 w-fit px-2 py-2 md:px-4 md:py-2 rounded-full hover:bg-gray-50 active:scale-95 transition-all text-xs  text-[#A9A9A9] cursor-pointer">
           <FilterIcon />
-          <span>Filter By</span>
+          <span className="text-xs text-nowrap md:text-sm">Filter By</span>
         </button>
 
         {/* Global Search Input */}
@@ -228,7 +228,7 @@ const AssignmentGrid = () => {
             placeholder="Search Assignment"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-full text-xs font-(--font-bricolage-grotesque) focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-all bg-white text-gray-700"
+            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-full text-xs md:text-sm font-(--font-bricolage-grotesque) focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-all bg-white text-gray-700"
           />
           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center">
             <SearchIcon />
