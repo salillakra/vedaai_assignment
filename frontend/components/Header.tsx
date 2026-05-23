@@ -1,7 +1,10 @@
+"use client";
 import BackIcon from "@/assets/Icons/back-icon.svg";
 import NotificationIcon from "@/assets/Icons/notification-icon.svg";
 import DropdownIcon from "@/assets/Icons/drop-down.svg";
+import VedaaiLogo from "@/assets/images/VedaaiLogo.svg";
 import Image from "next/image";
+import { useUiStore } from "@/store/uiStore";
 
 //Menu Icon
 const MenuIcon = () => {
@@ -50,49 +53,115 @@ const MenuIcon = () => {
 };
 
 const Header = () => {
+  const { toggleMobileSidebar } = useUiStore();
+
   return (
-    <div className="flex rounded-2xl h-14 shadow-[0px_16px_48px_0px_#0000001F] w-full items-center mt-3 justify-between pl-6 pr-3">
-      <div className="flex items-center gap-6">
-        <div>
-          <Image src={BackIcon} alt="back icon" className="cursor-pointer" />
-        </div>
-        <div className="flex items-center gap-1 text-[#A9A9A9]">
-          <MenuIcon />
-          <span className="font-(--font-bricolage-grotesque) text-[16px] leading-[100%] tracking-[-0.04em] align-middle">
-            Assignment
-          </span>
-        </div>
-      </div>
-      <div className="flex items-center gap-6">
-        <div className="relative">
-          <Image
-            src={NotificationIcon}
-            alt="notification icon"
-            className="cursor-pointer"
-          />
-          <span className="absolute -top-1 -right-1 h-2 w-2 bg-[#FF5623] rounded-full"></span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Image
-            src="/user_Image.jpg"
-            alt="profile picture"
-            width={32}
-            height={32}
-            className="rounded-full h-8 w-8 object-cover cursor-pointer"
-          />
-          <div className="flex font-(--font-bricolage-grotesque) items-center gap-0.5">
-            <span className="font-medium text-[16px] leading-[100%] tracking-[-0.04em] align-middle">
-              John Doe
+    <>
+      {/* Desktop Header */}
+      <div className="hidden md:flex bg-white rounded-2xl h-14 shadow-[0px_16px_48px_0px_#0000001F] w-full items-center mt-3 justify-between pl-6 pr-3 select-none">
+        <div className="flex items-center gap-6">
+          <div>
+            <Image src={BackIcon} alt="back icon" className="cursor-pointer" />
+          </div>
+          <div className="flex items-center gap-2 text-[#A9A9A9]">
+            <MenuIcon />
+            <span className="text-[16px] leading-[100%] tracking-[-0.04em] align-middle">
+              Assignment
             </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-6">
+          <div className="relative">
             <Image
-              src={DropdownIcon}
-              alt="dropdown icon"
-              className="cursor-pointer inline-block ml-1"
+              src={NotificationIcon}
+              alt="notification icon"
+              className="cursor-pointer"
             />
+            <span className="absolute -top-1 -right-1 h-2 w-2 bg-[#FF5623] rounded-full"></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Image
+              src="/user_Image.jpg"
+              alt="profile picture"
+              width={32}
+              height={32}
+              className="rounded-full h-8 w-8 object-cover cursor-pointer"
+            />
+            <div className="flex font-(--font-bricolage-grotesque) items-center gap-0.5">
+              <span className="font-medium text-[16px] leading-[100%] tracking-[-0.04em] align-middle">
+                John Doe
+              </span>
+              <Image
+                src={DropdownIcon}
+                alt="dropdown icon"
+                className="cursor-pointer inline-block ml-1"
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <div className="flex md:hidden w-full h-16 bg-white border-b border-gray-100 items-center justify-between px-4 sticky top-0 z-40 shadow-xs">
+        {/* Left: VedaAI Logo */}
+        <div className="flex items-center h-10">
+          <Image
+            src={VedaaiLogo}
+            alt="VedaAI Logo"
+            width={100}
+            height={32}
+            className="h-12 w-auto translate-y-1.75"
+            priority
+          />
+        </div>
+
+        {/* Right: Notifications, Avatar, Hamburger */}
+        <div className="flex items-center gap-3">
+          {/* Notification bell inside a rounded light gray circle */}
+          <div className="relative h-10 w-10 flex items-center justify-center bg-[#F4F4F4] rounded-full cursor-pointer hover:bg-gray-200 transition-colors">
+            <Image
+              src={NotificationIcon}
+              alt="notification icon"
+              width={20}
+              height={20}
+            />
+            {/* Orange-Red badge dot */}
+            <span className="absolute top-2.5 right-2.75 h-2.5 w-2.5 bg-[#FF5623] rounded-full border border-white"></span>
+          </div>
+
+          {/* User profile picture */}
+          <Image
+            src="/user_Image.jpg"
+            alt="profile picture"
+            width={40}
+            height={40}
+            className="rounded-full h-10 w-10 object-cover cursor-pointer border border-gray-200"
+          />
+
+          {/* Hamburger Menu Icon */}
+          <button
+            onClick={toggleMobileSidebar}
+            className="h-10 w-10 flex items-center justify-center cursor-pointer text-black hover:bg-gray-100 rounded-full transition-colors active:scale-95"
+            aria-label="Open navigation menu"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 6H20M4 12H20M4 18H20"
+                stroke="black"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </>
   );
 };
 
