@@ -255,13 +255,15 @@ const AssignmentGrid = () => {
       )}
 
       {/* CTA Button */}
-      <div
-        className="hidden md:flex sticky bottom-6 z-30 justify-center w-full pointer-events-none mt-auto pb-2
-      "
+      <div className="hidden md:flex sticky bottom-0 z-30 justify-center items-end w-full pointer-events-none mt-auto pb-6"
+        style={{
+          background: 'linear-gradient(to top, #F8F9FA 30%, rgba(248,249,250,0.8) 60%, rgba(248,249,250,0) 100%)',
+          height: '120px',
+        }}
       >
         <button
           onClick={handleCreateAssignment}
-          className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 bg-black/85 backdrop-blur-md text-white hover:bg-black active:scale-95 transition-all rounded-full text-xs font-semibold shadow-[0px_8px_32px_rgba(0,0,0,0.18)] border border-white/10 cursor-pointer"
+          className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 bg-black/85 text-white hover:bg-black active:scale-95 transition-all rounded-full text-xs font-semibold border border-white/10 cursor-pointer shadow-[0px_8px_24px_rgba(0,0,0,0.2)]"
         >
           <span className="text-lg leading-none font-light">+</span>
           Create Assignment
