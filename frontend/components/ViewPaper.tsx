@@ -7,6 +7,8 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import Image from "next/image";
+import VedaAiLogo from "@/assets/images/VedaaiMobileLogo.svg";
 
 interface Question {
   question: string;
@@ -120,8 +122,14 @@ const ViewPaper = ({
       </div>
 
       <div className="bg-white border border-gray-200 rounded-3xl p-6 md:p-12 shadow-[0px_16px_48px_rgba(0,0,0,0.03)] font-sans">
-        <div className="text-right text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-6">
-          VedaAI Education Assessment Engine
+        <div className="flex justify-end mb-6">
+          <Image
+            height={100}
+            width={100}
+            src={VedaAiLogo}
+            alt="VedaAI Logo"
+            className="h-7 w-auto"
+          />
         </div>
 
         <div className="text-center mb-8">

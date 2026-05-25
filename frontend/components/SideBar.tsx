@@ -37,7 +37,7 @@ const SidebarContent = ({ onClose }: SidebarContentProps) => {
     },
     {
       name: "Assignments",
-      href: "#",
+      href: "/",
       Icon: FileTextIcon,
       active: true,
     },
@@ -162,7 +162,6 @@ const SidebarContent = ({ onClose }: SidebarContentProps) => {
 
 /**
  * Main SideBar Shell.
- * Orchestrates viewport boundaries to toggle standard desktop layout or sliding overlay drawer.
  */
 const SideBar = () => {
   const { isMobileSidebarOpen, setMobileSidebarOpen } = useUiStore();

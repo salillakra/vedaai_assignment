@@ -1,8 +1,10 @@
 "use client";
 import { useState } from "react";
+import { useUiStore } from "@/store/uiStore";
 
 const BottomNav = () => {
   const [activeTab, setActiveTab] = useState("Assignments");
+  const { setViewPaperAssignmentId, setShowCreateAssignment } = useUiStore();
 
   const navItems = [
     {
@@ -62,6 +64,7 @@ const BottomNav = () => {
           />
         </svg>
       ),
+      link: "/",
     },
     {
       name: "Library",
@@ -133,7 +136,13 @@ const BottomNav = () => {
           return (
             <button
               key={item.name}
-              onClick={() => setActiveTab(item.name)}
+              onClick={() => {
+                setActiveTab(item.name);
+                if (item.name === "Assignments") {
+                  setViewPaperAssignmentId(null);
+                  setShowCreateAssignment(false);
+                }
+              }}
               className="flex flex-col items-center justify-center py-2 flex-1 cursor-pointer transition-all duration-200 active:scale-95 gap-1.5"
             >
               <div className="flex items-center justify-center h-5 w-5">
