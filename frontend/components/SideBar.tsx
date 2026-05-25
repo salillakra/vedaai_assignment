@@ -38,6 +38,7 @@ const SidebarContent = ({ onClose }: SidebarContentProps) => {
       name: "Assignments",
       href: "#",
       Icon: FileTextIcon,
+      active: true,
     },
     {
       name: "AI Teacher's Toolkit",
@@ -97,13 +98,13 @@ const SidebarContent = ({ onClose }: SidebarContentProps) => {
               key={index}
               href={link.href}
               onClick={onClose}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#F0F0F0] transition-colors duration-200"
+              className={`flex items-center gap-3 p-2 rounded-lg hover:bg-[#F0F0F0] transition-colors duration-200 ${link.active ? "bg-[#F0F0F0]" : ""}`}
             >
               <Image src={link.Icon} alt={link.name} width={20} height={20} />
               <span className="font-(--font-bricolage-grotesque) text-base leading-[1.4] tracking-[-0.04em] align-middle text-[#5E5E5ECC]">
                 {link.name}
               </span>
-              
+
               {/* Dynamic Orange-Red count badge for Assignments */}
               {isAssignments && assignmentsCount > 0 && (
                 <span className="ml-auto bg-[#FF5623] text-white text-[11px] font-bold px-2 py-0.5 rounded-full select-none transition-all scale-100 hover:scale-105">
@@ -115,7 +116,6 @@ const SidebarContent = ({ onClose }: SidebarContentProps) => {
         })}
       </div>
 
-      {/* Settings & Institute Block anchored to footer */}
       <div className="flex flex-col gap-2 mt-auto pt-6 border-t border-gray-100">
         <a
           href="#"
