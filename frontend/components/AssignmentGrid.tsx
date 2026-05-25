@@ -225,7 +225,7 @@ const AssignmentCard = ({
                   target="_blank"
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="block px-4 py-2 text-xs font-(--font-bricolage-grotesque) text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="hidden md:block px-4 py-2 text-xs font-(--font-bricolage-grotesque) text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Download PDF
                 </a>
@@ -263,7 +263,7 @@ const AssignmentCard = ({
           target="_blank"
           rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-6 bottom-5 flex items-center justify-center bg-black/85 text-white hover:bg-black rounded-full px-4 py-1.5 text-xs font-semibold active:scale-95 transition-all cursor-pointer"
+          className="hidden md:flex absolute right-6 bottom-5 items-center justify-center bg-black/85 text-white hover:bg-black rounded-full px-4 py-1.5 text-xs font-semibold active:scale-95 transition-all cursor-pointer"
         >
           Download PDF
         </a>
@@ -277,6 +277,17 @@ const AssignmentCard = ({
         <span>
           <strong className="text-gray-700">Due:</strong> {dueDateFormatted}
         </span>
+        {pdfUrl && (
+          <a
+            href={getFullPdfUrl(pdfUrl)}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="md:hidden flex items-center justify-center bg-black/85 text-white hover:bg-black rounded-full px-3 py-1 text-[10px] font-semibold active:scale-95 transition-all cursor-pointer"
+          >
+            Download PDF
+          </a>
+        )}
       </div>
     </div>
   );
@@ -397,7 +408,7 @@ const AssignmentGrid = ({ assignments }: { assignments: Assignment[] }) => {
       </div>
 
       {filteredAssignments.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mt-6 md:mt-8 flex-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 lg:gap-3 mt-6 md:mt-8 flex-1">
           {filteredAssignments.map((assignment) => (
             <AssignmentCard
               key={assignment.id}
