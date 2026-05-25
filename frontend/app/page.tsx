@@ -9,8 +9,6 @@ const page = () => {
     <div className="flex h-screen w-screen overflow-hidden bg-[#F8F9FA] relative">
       <SideBar />
       <MainSection />
-
-      {/* Mobile bottom nav and floating action button */}
       <MobileFab />
       <BottomNav />
     </div>

@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque } from "next/font/google";
+import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+import Providers from "@/app/providers";
 
+const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
 
 const bricolageGrotesque = Bricolage_Grotesque({
   variable: "--font-bricolage-grotesque",
@@ -22,9 +25,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bricolageGrotesque.variable} h-full antialiased`}
+      className={cn("h-full", "antialiased", bricolageGrotesque.variable, "font-sans", figtree.variable)}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
