@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum AssignmentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model Assignment {
+  id                 String             @id @default(auto()) @map("_id") @db.ObjectId
+
+  title              String
+  instructions       String?
+  dueDate            DateTime?
+  fileUrl            String?
+
+  questionTypes      String[]
+
+  numberOfQuestions  Int
+  totalMarks         Int
+
+  status             AssignmentStatus   @default(PENDING)
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  paper              QuestionPaper?
+
+  @@map("assignments")
+}
+
+model QuestionPaper {
+  id                 String        @id @default(auto()) @map("_id") @db.ObjectId
+
+  assignmentId       String        @db.ObjectId
+  assignment         Assignment    @relation(fields: [assignmentId], references: [id])
+
+  sections           Section[]
+
+  pdfUrl             String?
+
+  generatedAt        DateTime      @default(now())
+
+  @@unique([assignmentId])
+
+  @@map("question_papers")
+}
+
+type Section {
+  title              String
+  instruction        String
+  questions          Question[]
+}
+
+type Question {
+  question           String
+  difficulty         Difficulty
+  marks              Int
+  type               String?
+  options            String[]
+  answer             String
+}
