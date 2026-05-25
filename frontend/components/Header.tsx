@@ -2,7 +2,6 @@
 import BackIcon from "@/assets/Icons/back-icon.svg";
 import NotificationIcon from "@/assets/Icons/notification-icon.svg";
 import DropdownIcon from "@/assets/Icons/drop-down.svg";
-import VedaaiLogo from "@/assets/images/VedaaiLogo.svg";
 import Image from "next/image";
 import { useUiStore } from "@/store/uiStore";
 import VedaaiMobileLogo from "@/assets/images/VedaaiMobileLogo.svg";

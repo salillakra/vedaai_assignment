@@ -1,10 +1,11 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAssignmentStore, Assignment } from "@/store/assignmentStore";
+import { useUiStore } from "@/store/uiStore";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { io, Socket } from "socket.io-client";
 
-/**
- * ThreeDotMenu Icon Component
- */
 const ThreeDotIcon = () => (
   <svg
     width="16"
@@ -37,9 +38,6 @@ const ThreeDotIcon = () => (
   </svg>
 );
 
-/**
- * Search/Magnifying Glass Icon Component
- */
 const SearchIcon = () => (
   <svg
     width="16"
@@ -66,9 +64,6 @@ const SearchIcon = () => (
   </svg>
 );
 
-/**
- * Filter Icon Component
- */
 const FilterIcon = () => (
   <svg
     width="20"
@@ -86,14 +81,46 @@ const FilterIcon = () => (
   </svg>
 );
 
-const AssignmentCard = ({ assignment }: { assignment: Assignment }) => {
+const AssignmentCard = ({
+  assignment,
+  socketStatus,
+  onClearSocketStatus,
+}: {
+  assignment: Assignment;
+  socketStatus?: { status: string; message: string; pdfUrl?: string };
+  onClearSocketStatus?: (id: string) => void;
+}) => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const deleteAssignment = useAssignmentStore(
-    (state) => state.deleteAssignment,
-  );
+  const queryClient = useQueryClient();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { setViewPaperAssignmentId } = useUiStore();
 
-  // Close card menu contextually when tapping outside the element boundaries
+  const getFullPdfUrl = (url?: string | null) => {
+    if (!url) return "";
+    if (url.startsWith("http")) return url;
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    return `${apiBase}${url.startsWith("/") ? "" : "/"}${url}`;
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/api/assignments/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assignments"] });
+    },
+  });
+
+  const retryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.post(`/api/assignments/${id}/retry`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assignments"] });
+      onClearSocketStatus?.(assignment.id);
+    },
+  });
+
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -106,39 +133,119 @@ const AssignmentCard = ({ assignment }: { assignment: Assignment }) => {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [menuOpen]);
 
-  return (
-    <div className="relative h-40.5 bg-white border border-gray-100 rounded-3xl p-5 md:p-6 shadow-[0px_8px_24px_rgba(0,0,0,0.03)] hover:shadow-[0px_12px_32px_rgba(0,0,0,0.06)] hover:border-gray-200 transition-all duration-300">
-      <div className="flex justify-between items-start gap-4">
-        {/* Assignment Title */}
-        <h3 className="font-bold text-gray-800 text-lg md:text-xl leading-[1.3] tracking-tight">
-          {assignment.title}
-        </h3>
+  const currentStatus = socketStatus?.status || assignment.status;
+  const currentMessage = socketStatus?.message || "";
+  const pdfUrl = socketStatus?.pdfUrl || assignment.paper?.pdfUrl;
 
-        {/* Dropdown Trigger */}
+  const assignedDateFormatted = assignment.createdAt
+    ? new Date(assignment.createdAt)
+        .toLocaleDateString("en-GB")
+        .replace(/\//g, "-")
+    : "today";
+
+  const dueDateFormatted = assignment.dueDate
+    ? new Date(assignment.dueDate)
+        .toLocaleDateString("en-GB")
+        .replace(/\//g, "-")
+    : "no due date";
+
+  return (
+    <div
+      onClick={() => {
+        if (currentStatus === "COMPLETED") {
+          setViewPaperAssignmentId(assignment.id);
+        }
+      }}
+      className={`relative h-44.5 bg-white border border-gray-100 rounded-3xl p-5 md:p-6 shadow-[0px_8px_24px_rgba(0,0,0,0.03)] hover:shadow-[0px_12px_32px_rgba(0,0,0,0.06)] hover:border-gray-200 transition-all duration-300 ${
+        currentStatus === "COMPLETED" ? "cursor-pointer" : ""
+      }`}
+    >
+      <div className="flex justify-between items-start gap-4">
+        <div>
+          <h3 className="font-bold text-gray-800 text-lg md:text-xl leading-[1.3] tracking-tight">
+            {assignment.title}
+          </h3>
+
+          <div className="mt-2 flex flex-wrap gap-2 items-center">
+            {currentStatus === "PENDING" && (
+              <span className="text-[10px] font-semibold bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full border border-yellow-200">
+                pending
+              </span>
+            )}
+            {currentStatus === "PROCESSING" && (
+              <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
+                <span className="h-1.5 w-1.5 bg-blue-600 rounded-full animate-ping"></span>
+                <span className="text-[10px] font-semibold">
+                  {currentMessage || "processing"}
+                </span>
+              </div>
+            )}
+            {currentStatus === "FAILED" && (
+              <span className="text-[10px] font-semibold bg-red-50 text-red-700 px-2 py-0.5 rounded-full border border-red-200">
+                failed
+              </span>
+            )}
+            {currentStatus === "COMPLETED" && (
+              <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+                ready
+              </span>
+            )}
+          </div>
+        </div>
+
         <div className="relative shrink-0" ref={menuRef}>
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen(!menuOpen);
+            }}
             className="p-1.5 rounded-full hover:bg-gray-100 active:scale-95 transition-all cursor-pointer"
             aria-label="Toggle action menu"
           >
             <ThreeDotIcon />
           </button>
 
-          {/* Context Action Menu Dropdown */}
           {menuOpen && (
             <div className="absolute right-0 mt-1.5 w-36 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-20 animate-fade-in">
+              {currentStatus === "COMPLETED" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setViewPaperAssignmentId(assignment.id);
+                    setMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-xs font-(--font-bricolage-grotesque) text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  View Paper
+                </button>
+              )}
+              {pdfUrl && (
+                <a
+                  href={getFullPdfUrl(pdfUrl)}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="block px-4 py-2 text-xs font-(--font-bricolage-grotesque) text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Download PDF
+                </a>
+              )}
+              {currentStatus === "FAILED" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    retryMutation.mutate(assignment.id);
+                    setMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-xs font-(--font-bricolage-grotesque) text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Retry Generation
+                </button>
+              )}
               <button
-                onClick={() => {
-                  alert(`Viewing Details for: ${assignment.title}`);
-                  setMenuOpen(false);
-                }}
-                className="w-full text-left px-4 py-2 text-xs font-(--font-bricolage-grotesque) text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                View Assignment
-              </button>
-              <button
-                onClick={() => {
-                  deleteAssignment(assignment.id);
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteMutation.mutate(assignment.id);
                   setMenuOpen(false);
                 }}
                 className="w-full text-left px-4 py-2 text-xs font-(--font-bricolage-grotesque) text-red-500 hover:bg-red-50/50 transition-colors cursor-pointer"
@@ -150,52 +257,108 @@ const AssignmentCard = ({ assignment }: { assignment: Assignment }) => {
         </div>
       </div>
 
-      {/* Date metadata display */}
+      {pdfUrl && (
+        <a
+          href={getFullPdfUrl(pdfUrl)}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="absolute right-6 bottom-5 flex items-center justify-center bg-black/85 text-white hover:bg-black rounded-full px-4 py-1.5 text-xs font-semibold active:scale-95 transition-all cursor-pointer"
+        >
+          Download PDF
+        </a>
+      )}
+
       <div className="flex absolute bottom-5 justify-between flex-wrap items-center gap-x-4 gap-y-1 mt-8 md:mt-12 font-(--font-bricolage-grotesque) text-[11px] md:text-[13px] tracking-tight text-[#A9A9A9]">
         <span>
-          <strong className="text-gray-700">Assigned on :</strong>{" "}
-          {assignment.assignedDate}
+          <strong className="text-gray-700">Assigned on:</strong>{" "}
+          {assignedDateFormatted}
         </span>
         <span>
-          <strong className="text-gray-700">Due :</strong> {assignment.dueDate}
+          <strong className="text-gray-700">Due:</strong> {dueDateFormatted}
         </span>
       </div>
     </div>
   );
 };
 
-const AssignmentGrid = () => {
-  const { assignments, searchQuery, setSearchQuery, addAssignment } =
-    useAssignmentStore();
+const AssignmentGrid = ({ assignments }: { assignments: Assignment[] }) => {
+  const { searchQuery, setSearchQuery } = useAssignmentStore();
+  const { setShowCreateAssignment } = useUiStore();
+  const queryClient = useQueryClient();
+  const [socketStatuses, setSocketStatuses] = useState<
+    Record<string, { status: string; message: string; pdfUrl?: string }>
+  >({});
+  const socketRef = useRef<Socket | null>(null);
 
-  // Filter assignments locally based on search term
+  // Initialize Socket.io connection once on mount
+  useEffect(() => {
+    const socket = io(
+      process.env.NEXT_PUBLIC_SOCKET_URL || "ws://localhost:3001",
+      {
+        transports: ["websocket"],
+      },
+    );
+    socketRef.current = socket;
+
+    socket.on(
+      "assignment:status",
+      (data: {
+        assignmentId: string;
+        status: string;
+        message: string;
+        pdfUrl?: string;
+      }) => {
+        setSocketStatuses((prev) => ({
+          ...prev,
+          [data.assignmentId]: {
+            status: data.status,
+            message: data.message,
+            pdfUrl: data.pdfUrl,
+          },
+        }));
+
+        if (data.status === "COMPLETED" || data.status === "FAILED") {
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ["assignments"] });
+          }, 1000);
+        }
+      },
+    );
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [queryClient]);
+
+  // Dynamically join rooms as assignments change, or when socket connects
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+
+    const joinAll = () => {
+      assignments.forEach((assignment) => {
+        socket.emit("join:assignment", assignment.id);
+      });
+    };
+
+    if (socket.connected) {
+      joinAll();
+    } else {
+      socket.on("connect", joinAll);
+    }
+
+    return () => {
+      socket.off("connect", joinAll);
+    };
+  }, [assignments]);
+
   const filteredAssignments = assignments.filter((item) =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  // Triggers random assignment instantiation on demand
-  const handleCreateAssignment = () => {
-    const topics = [
-      "Quiz on Thermodynamics",
-      "Quiz on Electromagnetism",
-      "Quiz on Quantum Physics",
-      "Quiz on Organic Chemistry",
-      "Quiz on Newtonian Mechanics",
-    ];
-    const randomTitle = topics[Math.floor(Math.random() * topics.length)];
-
-    addAssignment({
-      title: randomTitle,
-      assignedDate: new Date().toLocaleDateString("en-GB").replace(/\//g, "-"),
-      dueDate: new Date(Date.now() + 86400000)
-        .toLocaleDateString("en-GB")
-        .replace(/\//g, "-"),
-    });
-  };
-
   return (
     <div className="w-full px-4 md:px-6 pt-4 md:pt-6 pb-24 md:pb-16 flex flex-col flex-1 select-none">
-      {/* Header Breadcrumb / Meta Block */}
       <div className="flex flex-col gap-1 mt-2 md:mt-4">
         <div className="flex items-center gap-2">
           <span className="relative hidden md:flex h-3 w-3 shrink-0 items-center justify-center">
@@ -213,15 +376,12 @@ const AssignmentGrid = () => {
         </p>
       </div>
 
-      {/* Action Filters and Search Row */}
       <div className="flex items-center justify-between mt-6 bg-white px-4 py-2 rounded-2xl gap-3">
-        {/* Filter Button */}
         <button className="flex items-center gap-1 w-fit px-2 py-2 md:px-4 md:py-2 rounded-full hover:bg-gray-50 active:scale-95 transition-all text-xs  text-[#A9A9A9] cursor-pointer">
           <FilterIcon />
           <span className="text-xs text-nowrap md:text-sm">Filter By</span>
         </button>
 
-        {/* Global Search Input */}
         <div className="relative w-full sm:w-64 max-w-sm">
           <input
             type="text"
@@ -236,11 +396,21 @@ const AssignmentGrid = () => {
         </div>
       </div>
 
-      {/* Grid Display Area */}
       {filteredAssignments.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mt-6 md:mt-8 flex-1">
           {filteredAssignments.map((assignment) => (
-            <AssignmentCard key={assignment.id} assignment={assignment} />
+            <AssignmentCard
+              key={assignment.id}
+              assignment={assignment}
+              socketStatus={socketStatuses[assignment.id]}
+              onClearSocketStatus={(id) => {
+                setSocketStatuses((prev) => {
+                  const updated = { ...prev };
+                  delete updated[id];
+                  return updated;
+                });
+              }}
+            />
           ))}
         </div>
       ) : (
@@ -254,15 +424,16 @@ const AssignmentGrid = () => {
         </div>
       )}
 
-      {/* CTA Button */}
-      <div className="hidden md:flex sticky bottom-0 z-30 justify-center items-end w-full pointer-events-none mt-auto pb-6"
+      <div
+        className="hidden md:flex sticky bottom-0 z-30 justify-center items-end w-full pointer-events-none mt-auto pb-6"
         style={{
-          background: 'linear-gradient(to top, #F8F9FA 30%, rgba(248,249,250,0.8) 60%, rgba(248,249,250,0) 100%)',
-          height: '120px',
+          background:
+            "linear-gradient(to top, #F8F9FA 30%, rgba(248,249,250,0.8) 60%, rgba(248,249,250,0) 100%)",
+          height: "120px",
         }}
       >
         <button
-          onClick={handleCreateAssignment}
+          onClick={() => setShowCreateAssignment(true)}
           className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 bg-black/85 text-white hover:bg-black active:scale-95 transition-all rounded-full text-xs font-semibold border border-white/10 cursor-pointer shadow-[0px_8px_24px_rgba(0,0,0,0.2)]"
         >
           <span className="text-lg leading-none font-light">+</span>
