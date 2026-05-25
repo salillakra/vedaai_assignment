@@ -26,6 +26,7 @@ COPY --from=install /app/node_modules ./node_modules
 COPY . .
 
 RUN bunx prisma generate
+RUN bunx playwright install --with-deps chromium
 
 # expose
 EXPOSE 3000
