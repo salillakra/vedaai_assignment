@@ -17,6 +17,7 @@ interface SidebarContentProps {
 }
 
 const SidebarContent = ({ onClose }: SidebarContentProps) => {
+  const { setShowCreateAssignment } = useUiStore();
   const { data: response } = useQuery({
     queryKey: ["assignments"],
     queryFn: async () => {
@@ -69,7 +70,7 @@ const SidebarContent = ({ onClose }: SidebarContentProps) => {
       {/* Primary Call-To-Action: Create Assignment */}
       <button
         onClick={() => {
-          alert("Create Assignment Clicked");
+          setShowCreateAssignment(true);
           if (onClose) onClose();
         }}
         className="h-12.5 cursor-pointer rounded-[100px] p-1 shadow-md bg-linear-to-r from-[#FF7950] to-[#C0350A] hover:opacity-95 transition-opacity active:scale-98"
