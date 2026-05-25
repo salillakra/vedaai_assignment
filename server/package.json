@@ -1,0 +1,33 @@
+{
+  "name": "server",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --hot src/index.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^2.6.0",
+    "@prisma/client": "~6.19.3",
+    "@socket.io/bun-engine": "^0.1.1",
+    "@types/katex": "^0.16.8",
+    "@types/pdfkit": "^0.17.6",
+    "bullmq": "^5.77.1",
+    "dotenv": "^17.4.2",
+    "hono": "^4.12.21",
+    "html-to-pdfmake": "^2.5.33",
+    "ioredis": "^5.10.1",
+    "jsdom": "^29.1.1",
+    "katex": "^0.17.0",
+    "marked": "^18.0.4",
+    "pdfkit": "^0.18.0",
+    "pdfmake": "^0.3.9",
+    "playwright": "^1.60.0",
+    "socket.io": "^4.8.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^25.9.1",
+    "@types/pdfmake": "^0.3.3",
+    "prisma": "~6.19.3"
+  }
+}

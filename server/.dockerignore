@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+.pnpm-store
+generated
+coverage
+dist
+.env
+.env.*
+!.env.example
+*.log
+.git
+public/pdfs
+public/temp
