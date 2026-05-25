@@ -9,19 +9,23 @@ import PieIcon from "@/assets/Icons/pie.svg";
 import ToolKitIcon from "@/assets/Icons/toolkit.svg";
 import GearIcon from "@/assets/Icons/gear.svg";
 import { useUiStore } from "@/store/uiStore";
-import { useAssignmentStore } from "@/store/assignmentStore";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 interface SidebarContentProps {
   onClose?: () => void;
 }
 
-/**
- * Common content wrapper for the VedaAI Sidebar.
- * Shared between the static desktop layout and the floating mobile drawer layout.
- */
 const SidebarContent = ({ onClose }: SidebarContentProps) => {
-  // Querying the active assignments count from our global data store
-  const assignmentsCount = useAssignmentStore((state) => state.assignments.length);
+  const { data: response } = useQuery({
+    queryKey: ["assignments"],
+    queryFn: async () => {
+      const res = await api.get("/api/assignments");
+      return res.data;
+    },
+  });
+
+  const assignmentsCount = response?.data?.length || 0;
 
   const quickLinks = [
     { name: "Home", href: "#", Icon: MenuIcon },
@@ -67,7 +71,7 @@ const SidebarContent = ({ onClose }: SidebarContentProps) => {
           alert("Create Assignment Clicked");
           if (onClose) onClose();
         }}
-        className="h-12.5 cursor-pointer rounded-[100px] p-1 shadow-[0px_32px_48px_0px_#00000033] bg-linear-to-r from-[#FF7950] to-[#C0350A] hover:opacity-95 transition-opacity active:scale-98"
+        className="h-12.5 cursor-pointer rounded-[100px] p-1 shadow-md bg-linear-to-r from-[#FF7950] to-[#C0350A] hover:opacity-95 transition-opacity active:scale-98"
       >
         <div className="h-full flex items-center justify-center gap-2 px-3 py-2 rounded-[98px] bg-black">
           <Image
