@@ -70,5 +70,38 @@ Allowed Question Types:
 - Long Answer Questions
 - True/False Questions
 - Fill in the Blanks
+
+STRICT JSON OUTPUT FORMAT:
+You MUST respond with ONLY valid JSON (no markdown fences, no explanation text) matching this exact schema:
+
+{
+  "title": "string",
+  "totalMarks": number,
+  "sections": [
+    {
+      "title": "string",
+      "instruction": "string",
+      "questions": [
+        {
+          "question": "string (markdown allowed)",
+          "difficulty": "EASY" | "MEDIUM" | "HARD",
+          "marks": number,
+          "type": "<MUST be one of the exact strings below>",
+          "options": ["string"] | [],
+          "answer": "string (markdown allowed)"
+        }
+      ]
+    }
+  ]
+}
+
+The "type" field MUST be EXACTLY one of these strings (copy-paste exactly, no variations):
+"Multiple Choice Questions"
+"Short Questions"
+"Diagram/Graph-Based Questions"
+"Numerical Problems"
+"Long Answer Questions"
+"True/False Questions"
+"Fill in the Blanks"
 `;
 };

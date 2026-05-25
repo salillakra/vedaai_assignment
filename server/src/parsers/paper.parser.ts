@@ -11,19 +11,46 @@ export const QUESTION_TYPES = [
   "Fill in the Blanks",
 ] as const;
 
+export const QuestionTypeSchema = z
+  .string()
+  .transform((val) => {
+    // Normalize common AI alias variants to canonical enum values
+    const normalized = val.trim();
+    const lower = normalized.toLowerCase();
+
+    if (lower.includes("multiple choice") || lower === "mcq") return "Multiple Choice Questions";
+    if (lower.includes("short") || lower === "short answer") return "Short Questions";
+    if (lower.includes("diagram") || lower.includes("graph")) return "Diagram/Graph-Based Questions";
+    if (lower.includes("numerical") || lower.includes("math") || lower.includes("calculation")) return "Numerical Problems";
+    if (lower.includes("long") || lower.includes("essay") || lower.includes("descriptive")) return "Long Answer Questions";
+    if (lower.includes("true") || lower.includes("false")) return "True/False Questions";
+    if (lower.includes("fill") || lower.includes("blank")) return "Fill in the Blanks";
+
+    // If it already matches exactly, pass through
+    if ((QUESTION_TYPES as readonly string[]).includes(normalized)) return normalized;
+
+    // Unknown — default to Short Questions as safest fallback
+    return "Short Questions";
+  })
+  .pipe(z.enum(QUESTION_TYPES));
+
 export const QuestionSchema = z.object({
   question: z.string().min(1),
 
-  difficulty: z.enum(["EASY", "MEDIUM", "HARD"]),
+  difficulty: z
+    .string()
+    .transform((v) => v.trim().toUpperCase())
+    .pipe(z.enum(["EASY", "MEDIUM", "HARD"])),
 
   marks: z.number().int().positive(),
 
-  type: z.enum(QUESTION_TYPES),
+  type: QuestionTypeSchema,
 
   options: z.union([z.array(z.string()), z.null(), z.undefined()]).transform((val) => val ?? []),
 
   answer: z.string().min(1),
 });
+
 
 export const SectionSchema = z.object({
   title: z.string().min(1),

@@ -31,7 +31,7 @@ export class PDFService {
               font-family: 'Inter', sans-serif;
               color: #1a202c;
               margin: 0;
-              padding: 40px;
+              padding: 0;
               line-height: 1.5;
             }
             
@@ -114,8 +114,7 @@ export class PDFService {
             }
             
             .section {
-              margin-bottom: 30px;
-              break-inside: avoid;
+              margin-bottom: 24px;
             }
             
             .section-title {
@@ -125,6 +124,8 @@ export class PDFService {
               border-left: 4px solid var(--color-primary);
               padding-left: 12px;
               margin-bottom: 5px;
+              break-after: avoid;
+              break-before: auto;
             }
             
             .section-instruction {
@@ -132,7 +133,8 @@ export class PDFService {
               font-style: italic;
               color: #718096;
               padding-left: 16px;
-              margin-bottom: 15px;
+              margin-bottom: 12px;
+              break-after: avoid;
             }
             
             .question {
@@ -199,6 +201,15 @@ export class PDFService {
               max-width: 100%;
               border-radius: 8px;
               border: 1px solid #e2e8f0;
+              padding: 10px;
+              background: #fff;
+              overflow: hidden;
+            }
+            
+            .mermaid-diagram svg {
+              display: block;
+              max-width: 100%;
+              height: auto;
             }
             
             /* Markdown rendering fixes */
@@ -243,7 +254,7 @@ export class PDFService {
             </div>
           ` : ''}
           
-          <div style="margin-top: 30px;">
+          <div style="margin-top: 20px;">
             ${await Promise.all(sections.map(async (section) => `
               <div class="section">
                 <div class="section-title">${section.title}</div>
@@ -301,7 +312,7 @@ export class PDFService {
       const pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
-        margin: { top: '0', right: '0', bottom: '0', left: '0' }
+        margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' }
       });
       
       await browser.close();
@@ -312,23 +323,70 @@ export class PDFService {
     }
   }
 
+  
+  // Render a mermaid diagram code string to an inline svg using a headless
+  private static async renderMermaidToSVG(code: string): Promise<string> {
+    const browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    });
+    try {
+      const page = await browser.newPage();
+      await page.setContent(
+        `<!DOCTYPE html>
+        <html>
+          <head><meta charset="UTF-8"></head>
+          <body>
+            <div id="graph" class="mermaid">${code}</div>
+            <script type="module">
+              import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+              mermaid.initialize({ startOnLoad: false, theme: 'default' });
+              const { svg } = await mermaid.render('rendered', document.getElementById('graph').textContent.trim());
+              document.getElementById('graph').outerHTML = svg;
+            </script>
+          </body>
+        </html>`,
+        { waitUntil: 'networkidle' },
+      );
+      // give mermaid a moment to finish rendering
+      await page.waitForTimeout(500);
+      const svg = await page.evaluate(() => document.querySelector('svg')?.outerHTML ?? '');
+      return svg || `<pre style="color:red">[Mermaid render failed]</pre>`;
+    } catch (err) {
+      logger.error('Mermaid SVG render error:', err);
+      return `<pre style="color:red">[Mermaid render failed]</pre>`;
+    } finally {
+      await browser.close();
+    }
+  }
+
   private static async renderMarkdown(text: string): Promise<string> {
     if (!text) return "";
-    
-    // First extract mermaid blocks
-    let processedText = text;
-    const mermaidRegex = /\`\`\`mermaid\n([\s\S]*?)\`\`\`/g;
-    
-    processedText = processedText.replace(mermaidRegex, (match, code) => {
-      try {
-        const base64 = Buffer.from(code.trim()).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        return `<img src="https://mermaid.ink/img/\${base64}" class="mermaid-diagram" alt="Mermaid Diagram" />`;
-      } catch (e) {
-        return match;
-      }
+
+    // extract and server-render all mermaid blocks to inline svg
+    const mermaidRegex = /```mermaid\n([\s\S]*?)```/g;
+    const mermaidMatches: Array<{ placeholder: string; code: string }> = [];
+    let idx = 0;
+    let processedText = text.replace(mermaidRegex, (_match, code) => {
+      const placeholder = `__MERMAID_PLACEHOLDER_${idx++}__`;
+      mermaidMatches.push({ placeholder, code: code.trim() });
+      return placeholder;
     });
 
-    // Handle math blocks
+    // render all mermaid diagrams in parallel
+    const renderedSVGs = await Promise.all(
+      mermaidMatches.map(({ code }) => PDFService.renderMermaidToSVG(code)),
+    );
+
+    // re-inject svgs
+    mermaidMatches.forEach(({ placeholder }, i) => {
+      processedText = processedText.replace(
+        placeholder,
+        `<div class="mermaid-diagram">${renderedSVGs[i]}</div>`,
+      );
+    });
+
+    // handle math blocks
     const blockMathRegex = /\$\$([\s\S]*?)\$\$/g;
     processedText = processedText.replace(blockMathRegex, (match, math) => {
       try {
@@ -338,7 +396,7 @@ export class PDFService {
       }
     });
 
-    const inlineMathRegex = /\$([^\$]*?)\$/g;
+    const inlineMathRegex = /\$([^$]*?)\$/g;
     processedText = processedText.replace(inlineMathRegex, (match, math) => {
       try {
         return katex.renderToString(math, { displayMode: false, throwOnError: false });
@@ -347,7 +405,7 @@ export class PDFService {
       }
     });
 
-    // Use marked for the rest
+    // use marked for the rest
     return marked.parse(processedText, { async: false }) as string;
   }
 }
