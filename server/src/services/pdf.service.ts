@@ -2,6 +2,8 @@ import { chromium } from "playwright";
 import { logger } from "../utils/logger";
 import katex from "katex";
 import { marked } from "marked";
+import fs from "fs";
+import path from "path";
 
 export class PDFService {
   static async generatePDF(
@@ -11,7 +13,17 @@ export class PDFService {
     sections: any[],
     totalMarks: number,
   ): Promise<Buffer> {
-    logger.info(`Generating PDF buffer via Playwright for paper ID: ${paperId}`);
+    logger.info(
+      `Generating PDF buffer via Playwright for paper ID: ${paperId}`,
+    );
+
+    const logoPath = path.resolve(
+      __dirname,
+      "../../public/images/VedaaiMobileLogo.svg",
+    );
+    const logoBase64 = fs.existsSync(logoPath)
+      ? `data:image/svg+xml;base64,${fs.readFileSync(logoPath).toString("base64")}`
+      : "";
 
     // Create the HTML content
     const htmlContent = `
@@ -36,8 +48,18 @@ export class PDFService {
             }
             
             .header {
+              position: relative;
               text-align: center;
               margin-bottom: 30px;
+            }
+
+            .logo-top-right {
+              position: absolute;
+              top: 0;
+              right: 0;
+              height: 32px;
+              width: auto;
+              display: block;
             }
             
             .title {
@@ -222,6 +244,7 @@ export class PDFService {
         </head>
         <body>
           <div class="header">
+            ${logoBase64 ? `<img src="${logoBase64}" class="logo-top-right" alt="VedaAI Logo" />` : ""}
             <h1 class="title">${title}</h1>
           </div>
           
@@ -247,28 +270,37 @@ export class PDFService {
             </div>
           </div>
           
-          ${instructions ? `
+          ${
+            instructions
+              ? `
             <div class="instructions">
               <div class="instructions-title">Instructions:</div>
               <div class="instructions-content">${await PDFService.renderMarkdown(instructions)}</div>
             </div>
-          ` : ''}
+          `
+              : ""
+          }
           
           <div style="margin-top: 20px;">
-            ${await Promise.all(sections.map(async (section) => `
+            ${await Promise.all(
+              sections.map(
+                async (section) => `
               <div class="section">
                 <div class="section-title">${section.title}</div>
                 <div class="section-instruction">${section.instruction}</div>
                 
                 <div>
-                  ${await Promise.all(section.questions.map(async (q: any, qIdx: number) => {
-                    const isMCQ =
-                      q.type?.toLowerCase().includes("multiple choice") ||
-                      q.type?.toLowerCase().includes("mcq") ||
-                      section.title?.toLowerCase().includes("multiple choice") ||
-                      section.title?.toLowerCase().includes("mcq");
-                      
-                    return `
+                  ${await Promise.all(
+                    section.questions.map(async (q: any, qIdx: number) => {
+                      const isMCQ =
+                        q.type?.toLowerCase().includes("multiple choice") ||
+                        q.type?.toLowerCase().includes("mcq") ||
+                        section.title
+                          ?.toLowerCase()
+                          .includes("multiple choice") ||
+                        section.title?.toLowerCase().includes("mcq");
+
+                      return `
                       <div class="question">
                         <div class="question-header">
                           <div class="question-text">
@@ -279,22 +311,33 @@ export class PDFService {
                           </div>
                         </div>
                         
-                        ${(isMCQ && q.options && q.options.length > 0) ? `
+                        ${
+                          isMCQ && q.options && q.options.length > 0
+                            ? `
                           <div class="options-grid">
-                            ${await Promise.all(q.options.map(async (opt: string, oIdx: number) => `
+                            ${await Promise.all(
+                              q.options.map(
+                                async (opt: string, oIdx: number) => `
                               <div class="option">
                                 <span class="option-label">${String.fromCharCode(65 + oIdx)}.</span>
                                 <span>${await PDFService.renderMarkdown(opt)}</span>
                               </div>
-                            `)).then(res => res.join(''))}
+                            `,
+                              ),
+                            ).then((res) => res.join(""))}
                           </div>
-                        ` : ''}
+                        `
+                            : ""
+                        }
                       </div>
                     `;
-                  })).then(res => res.join(''))}
+                    }),
+                  ).then((res) => res.join(""))}
                 </div>
               </div>
-            `)).then(res => res.join(''))}
+            `,
+              ),
+            ).then((res) => res.join(""))}
           </div>
         </body>
       </html>
@@ -303,32 +346,42 @@ export class PDFService {
     try {
       const browser = await chromium.launch({
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+        ],
       });
       const page = await browser.newPage();
-      
-      await page.setContent(htmlContent, { waitUntil: 'networkidle' });
-      
+
+      await page.setContent(htmlContent, { waitUntil: "networkidle" });
+
       const pdfBuffer = await page.pdf({
-        format: 'A4',
+        format: "A4",
         printBackground: true,
-        margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' }
+        margin: { top: "20mm", right: "15mm", bottom: "20mm", left: "15mm" },
       });
-      
+
       await browser.close();
       return Buffer.from(pdfBuffer);
     } catch (error) {
-      logger.error("Failed to generate PDF document layout via Playwright:", error);
+      logger.error(
+        "Failed to generate PDF document layout via Playwright:",
+        error,
+      );
       throw error;
     }
   }
 
-  
   // Render a mermaid diagram code string to an inline svg using a headless
   private static async renderMermaidToSVG(code: string): Promise<string> {
     const browser = await chromium.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
     });
     try {
       const page = await browser.newPage();
@@ -346,14 +399,16 @@ export class PDFService {
             </script>
           </body>
         </html>`,
-        { waitUntil: 'networkidle' },
+        { waitUntil: "networkidle" },
       );
       // give mermaid a moment to finish rendering
       await page.waitForTimeout(500);
-      const svg = await page.evaluate(() => document.querySelector('svg')?.outerHTML ?? '');
+      const svg = await page.evaluate(
+        () => document.querySelector("svg")?.outerHTML ?? "",
+      );
       return svg || `<pre style="color:red">[Mermaid render failed]</pre>`;
     } catch (err) {
-      logger.error('Mermaid SVG render error:', err);
+      logger.error("Mermaid SVG render error:", err);
       return `<pre style="color:red">[Mermaid render failed]</pre>`;
     } finally {
       await browser.close();
@@ -390,7 +445,10 @@ export class PDFService {
     const blockMathRegex = /\$\$([\s\S]*?)\$\$/g;
     processedText = processedText.replace(blockMathRegex, (match, math) => {
       try {
-        return katex.renderToString(math, { displayMode: true, throwOnError: false });
+        return katex.renderToString(math, {
+          displayMode: true,
+          throwOnError: false,
+        });
       } catch (e) {
         return match;
       }
@@ -399,7 +457,10 @@ export class PDFService {
     const inlineMathRegex = /\$([^$]*?)\$/g;
     processedText = processedText.replace(inlineMathRegex, (match, math) => {
       try {
-        return katex.renderToString(math, { displayMode: false, throwOnError: false });
+        return katex.renderToString(math, {
+          displayMode: false,
+          throwOnError: false,
+        });
       } catch (e) {
         return match;
       }
