@@ -1,35 +1,28 @@
-# Use the official Bun image
-FROM oven/bun:1.1.27-slim as base
+# ── Stage 1: install dependencies ─────────────────────────────────────────────
+FROM oven/bun:1.2 AS install
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml ./
+RUN bun install --frozen-lockfile
+
+# ── Stage 2: production image ──────────────────────────────────────────────────
+FROM oven/bun:1.2 AS release
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-FROM base AS install
-COPY package.json pnpm-lock.yaml* bun.lockb* ./
-RUN bun install
-
-FROM base AS release
-
-# Set environment variables
-ENV DATABASE_URL=$DATABASE_URL
-ENV NODE_ENV=$NODE_ENV
-ENV REDIS_URL=$REDIS_URL
-ENV JWT_SECRET=$JWT_SECRET
-ENV PORT=$PORT
-ENV GEMINI_API_KEY=$GEMINI_API_KEY
-ENV S3_ENDPOINT=$S3_ENDPOINT
-ENV S3_ACCESS_KEY_ID=$S3_ACCESS_KEY_ID
-ENV S3_SECRET_ACCESS_KEY=$S3_SECRET_ACCESS_KEY
-ENV S3_BUCKET_NAME=$S3_BUCKET_NAME
-
+# Copy installed node_modules from install stage
 COPY --from=install /app/node_modules ./node_modules
+
+# Copy the rest of the source
 COPY . .
 
-RUN bunx prisma generate
+# Generate Prisma client (uses a dummy URL; real URL is injected at runtime)
+RUN DATABASE_URL="mongodb://dummy:27017/dummy?replicaSet=rs0" bunx prisma generate
+
+# Install Playwright's Chromium browser + system dependencies
 RUN bunx playwright install --with-deps chromium
 
-# expose
-EXPOSE 3000
+EXPOSE 3001
 
-#start the server
 CMD ["bun", "run", "src/index.ts"]

@@ -6,11 +6,17 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: "mongodb://mongo:27017/vedaai?replicaSet=rs0"
+      DATABASE_URL: "mongodb://mongo:27017/vedaai?replicaSet=rs0&directConnection=true"
       REDIS_URL: "redis://redis:6379"
+      NODE_ENV: "production"
     depends_on:
-      - mongo
-      - redis
+      mongo:
+        condition: service_healthy
+      mongo-setup:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
   mongo:
     image: mongo:7
@@ -20,22 +26,46 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
+  # replica set Initiator (runs once)
   mongo-setup:
     image: mongo:7
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
     restart: "no"
-    command: >
-      bash -c 'sleep 5; mongosh --host mongo:27017 --eval "rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongo:27017\"}]})" || true'
+    entrypoint: >
+      bash -c '
+        mongosh --host mongo:27017 --quiet --eval "
+          try {
+            rs.status();
+            print(\"Replica set already initiated\");
+          } catch(e) {
+            rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongo:27017\"}]});
+            print(\"Replica set initiated\");
+          }
+        "
+      '
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
 volumes:
   mongo-data:
