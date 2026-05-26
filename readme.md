@@ -547,6 +547,44 @@ The `app` container waits for both MongoDB (healthy) and `mongo-setup` (complete
 
 ---
 
+## Cloud Deployment (Production)
+
+For a true production setup, the frontend is hosted on **Vercel** and the backend on **Azure Container Apps**.
+
+### Backend (Azure Container Apps)
+Since Azure Container Apps are serverless environments, stateful services like MongoDB and Redis shouldn't run in the same container cluster. 
+1. **Managed Databases:** Provision a database on **MongoDB Atlas** and a Redis cache on **Upstash**.
+2. **Push to Azure Container Registry (ACR):**
+   ```bash
+   cd server
+   az acr login --name <YourRegistryName>
+   REGISTRY_NAME=<YourRegistryName>.azurecr.io docker compose build app
+   REGISTRY_NAME=<YourRegistryName>.azurecr.io docker compose push app
+   ```
+3. **Deploy to ACA with Secure Secrets Injection:**
+   Deploy the image, mapping sensitive connection variables directly into Azure's secure secret store:
+   ```bash
+   az containerapp create \
+     --name vedaai-backend \
+     --resource-group <YourResourceGroup> \
+     --environment <YourACAEnvironment> \
+     --image <YourRegistryName>.azurecr.io/vedaai-app:latest \
+     --env-vars NODE_ENV=production PORT=3001 DATABASE_URL=secretref:db-url REDIS_URL=secretref:redis-url GEMINI_API_KEY=secretref:gemini-key \
+     --secrets db-url="<ATLAS_URL>" redis-url="<UPSTASH_URL>" gemini-key="<GEMINI_KEY>" \
+     --ingress external \
+     --target-port 3001
+   ```
+
+### Frontend (Vercel)
+1. Push your code to GitHub.
+2. Import the project into Vercel, making sure to set the **Root Directory** to `frontend`.
+3. Add the following Environment Variables pointing to the newly provisioned Azure backend URL:
+   - `NEXT_PUBLIC_API_URL` = `https://vedaai-backend.<id>.<region>.azurecontainerapps.io`
+   - `NEXT_PUBLIC_SOCKET_URL` = `wss://vedaai-backend.<id>.<region>.azurecontainerapps.io` (Note the `wss://` for secure websockets)
+4. Hit Deploy!
+
+---
+
 ## Acknowledgements
 
 - [Google Gemini](https://ai.google.dev) — AI question generation
